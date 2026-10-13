@@ -1,26 +1,41 @@
-"""Что приходит в запросах и уходит в ответах (Pydantic)."""
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class LoginIn(BaseModel):
     username: str
     password: str
+    client: Literal["web", "ios", "android"] = "web"
+    device_name: str | None = None
 
 
-class PasswordIn(BaseModel):
-    current_password: str
-    new_password: str = Field(min_length=8)
-
-
-class Me(BaseModel):
-    # from_attributes: можно вернуть объект User из базы, Pydantic возьмёт из него поля
+class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-
     id: int
     username: str
+    full_name: str
     role: str
-    barber: dict | None = None  # заполним, когда появится таблица barbers
 
 
-class OkOut(BaseModel):
-    ok: bool = True
+class TokenOut(BaseModel):
+    token: str
+    user: UserOut
+
+
+class BarberCreate(BaseModel):
+    full_name: str = Field(min_length=2, max_length=100)
+    phone: str | None = None
+    username: str = Field(min_length=3, max_length=64)
+    password: str = Field(min_length=8)
+    role: Literal["master", "admin"] = "master"
+    
+
+class BarberOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    username: str
+    full_name: str
+    phone: str | None
+    role: str
+    is_active: bool

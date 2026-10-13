@@ -1,24 +1,16 @@
-"""Подключение к базе, базовый класс таблиц и зависимость get_db."""
-from datetime import datetime
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase
 
-from sqlalchemy import DateTime, create_engine
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from app.config import settings
 
-from app.config import DATABASE_URL
-
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(bind=engine)
-
+engine = create_async_engine(settings.database_url, echo=True)
+async_session = async_sessionmaker(engine, expire_on_commit=False)
 
 class Base(DeclarativeBase):
-    # Все поля datetime храним с часовым поясом (timestamptz в PostgreSQL)
-    type_annotation_map = {datetime: DateTime(timezone=True)}
+    pass
 
-
-def get_db():
-    """Одна сессия базы на один запрос; после ответа закрывается."""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+async def get_session():
+    async with async_session() as session:
+        yield session
+        
+        
