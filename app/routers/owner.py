@@ -8,7 +8,7 @@ from app.db import get_session
 from app.deps import require_owner
 from app.errors import Err, api_error
 from app.models import User
-from app.schemas import BarberCreate, BarberOut
+from app.schemas import BarberCreate, BarberUpdate, PasswordReset , BarberCreated , BarberList
 from app.security import hash_password
 from app.models import UserSession
 
@@ -23,9 +23,10 @@ async def revoke_all_sessions(db: AsyncSession, user_id: int) -> None:
     await db.execute(delete(UserSession).where(UserSession.user_id == user_id))
     
 
-@router.post("/add/barber", response_model=BarberOut)
+@router.post("/add/barber" , response_model=BarberCreated)
 async def add_barber(data: BarberCreate, db: AsyncSession = Depends(get_session)):
     result = await db.execute(select(User).where(User.username == data.username))
+    
     if result.scalar_one_or_none():
         raise api_error(409, Err.USERNAME_TAKEN, "Такой логин уже занят")
 
@@ -42,7 +43,7 @@ async def add_barber(data: BarberCreate, db: AsyncSession = Depends(get_session)
     return {"code": 200, "message": "Барбер успешно добавлен", "barber": new_barber}
 
 
-@router.get("/barbers", response_model=list[BarberOut])
+@router.get("/barbers",  response_model=BarberList)
 async def list_barbers(db: AsyncSession = Depends(get_session)):
     result = await db.execute(
         select(User).where(User.role.in_(["master", "admin"])).order_by(User.id)
@@ -64,6 +65,7 @@ async def force_logout_barber(barber_id: int, db: AsyncSession = Depends(get_ses
 @router.post("/barbers/{barber_id}/dismiss")
 async def dismiss_barber(barber_id: int, db: AsyncSession = Depends(get_session)):
     barber = await db.get(User, barber_id)
+    
     if barber is None:
         raise api_error(404, Err.USER_NOT_FOUND, "Барбер не найден")
     if barber.role == "owner":
@@ -76,3 +78,34 @@ async def dismiss_barber(barber_id: int, db: AsyncSession = Depends(get_session)
     await revoke_all_sessions(db, barber_id)
     await db.commit()
     return {"code": 200, "message": "Барбер успешно уволен"}
+
+@router.patch("/barbers/{id}", response_model=BarberCreated)
+async def update_barber(id: int, data: BarberUpdate, db: AsyncSession = Depends(get_session)):
+    barber = await db.get(User, id)
+    if barber is None:
+        raise api_error(404, Err.USER_NOT_FOUND, "Барбер не найден")
+
+    if data.full_name is not None:
+        barber.full_name = data.full_name
+    if data.phone is not None:
+        barber.phone = data.phone
+        
+
+    await db.commit()
+    return {"code": 200, "message": "Барбер успешно обновлен", "barber": barber}
+
+@router.post("/barbers/{id}/reset-password")
+async def reset_barber_password(id: int, data: PasswordReset, db: AsyncSession = Depends(get_session)):
+    
+    barber = await db.get(User, id)
+    
+    if barber is None:
+        raise api_error(404, Err.USER_NOT_FOUND, "Барбер не найден")
+    if barber.role == "owner":
+        raise api_error(403, Err.FORBIDDEN, "Пароль владельца нельзя сбросить этим способом")
+
+
+    barber.password_hash = hash_password(data.new_password)
+    await revoke_all_sessions(db, barber.id)
+    await db.commit()
+    return {"code": 200, "message": "Пароль барбера успешно сброшен"}

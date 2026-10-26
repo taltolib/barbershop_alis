@@ -17,6 +17,7 @@ async def current_user(
     creds: HTTPAuthorizationCredentials | None = Depends(bearer),
     db: AsyncSession = Depends(get_session),
 ) -> User:
+    
     if creds is None:
         raise api_error(401, Err.SESSION_INVALID, "Нужен вход")
 

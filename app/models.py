@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, func
+from sqlalchemy import DateTime, ForeignKey, String, func  , UniqueConstraint , Text
 from sqlalchemy.orm import Mapped , mapped_column
 
 from app.db import Base
@@ -34,3 +34,28 @@ class UserSession(Base):
     
     
 
+class Category(Base):
+    __tablename__ = "categories"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), unique=True)
+    sort_order: Mapped[int] = mapped_column(default=0)
+    
+class Service(Base):
+    __tablename__ = "services"
+    __table_args__ = (
+        UniqueConstraint("category_id", "name", name="uq_service_category_name"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    category_id: Mapped[int] = mapped_column(
+        ForeignKey("categories.id", ondelete="RESTRICT"), index=True
+    )
+    sort_order: Mapped[int] = mapped_column(default=0)
+    name: Mapped[str] = mapped_column(String(100))
+    description: Mapped[str | None] = mapped_column(Text)
+    details: Mapped[str | None] = mapped_column(Text)
+    duration_min: Mapped[int] = mapped_column()
+    price: Mapped[int] = mapped_column()
+    price_is_from: Mapped[bool] = mapped_column(default=False)
+    is_active: Mapped[bool] = mapped_column(default=True)

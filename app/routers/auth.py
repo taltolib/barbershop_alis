@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException 
 from fastapi.security import HTTPAuthorizationCredentials
 from app.errors import Err, api_error
-from app.schemas import LoginIn, TokenOut
+from app.schemas import LoginIn, TokenOut, UserOut
 from app.models import User, UserSession
 from app.db import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -43,7 +43,7 @@ async def login(data: LoginIn, db: AsyncSession = Depends(get_session)):
     db.add(session)
     await db.commit()
 
-    return {"token": token, "user": users}
+    return {"code": 200, "token": token, "user": users}
 
 
 @router.post("/logout")
@@ -56,11 +56,7 @@ async def logout(creds: HTTPAuthorizationCredentials = Depends(bearer), user: Us
     return { "code ":200,"message": "Logout successful"}
     
     
-@router.post("/logoutall", status_code=204)
-async def logoutall(creds: HTTPAuthorizationCredentials = Depends(bearer), user: User = Depends(current_user),db: AsyncSession = Depends(get_session)):
-    await db.execute(
-        delete(UserSession).where(UserSession.token_hash == hash_token(creds.credentials))
-    )
-    await db.commit()
-    
-   
+@router.get("/me", response_model=UserOut)
+async def me(user: User = Depends(current_user)):
+    return user
+
