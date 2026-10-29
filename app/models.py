@@ -48,9 +48,7 @@ class Service(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    category_id: Mapped[int] = mapped_column(
-        ForeignKey("categories.id", ondelete="RESTRICT"), index=True
-    )
+    category_id: Mapped[int] = mapped_column( ForeignKey("categories.id", ondelete="RESTRICT"), index=True)
     sort_order: Mapped[int] = mapped_column(default=0)
     name: Mapped[str] = mapped_column(String(100))
     description: Mapped[str | None] = mapped_column(Text)
