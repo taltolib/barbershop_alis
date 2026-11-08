@@ -1,4 +1,10 @@
 import asyncio
+import sys
+
+# На Windows psycopg (async) не работает с ProactorEventLoop — используем Selector.
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 from logging.config import fileConfig
 
 from alembic import context

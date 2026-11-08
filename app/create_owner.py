@@ -1,6 +1,10 @@
 import asyncio
 import sys
 
+# На Windows psycopg (async) не работает с ProactorEventLoop — используем Selector.
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 from app.db import async_session
 from app.models import User
 from app.security import hash_password

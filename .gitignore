@@ -1,12 +1,5 @@
-# .venv/
-# __pycache__/
-# *.pyc
-# .env
-# ENDPOINTS.md
-# Makefile
-# alembic.ini
-# .env.example
-# requirements.txt
-# .gitignore
-# .vscode
-# alembic/
+.venv/
+__pycache__/
+*.pyc
+.env
+
